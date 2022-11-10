@@ -1,6 +1,7 @@
 from config.config import groups_file
-from lib.check.check import (
+from lib.check.check import (  # load_checks_to_execute_from_compliance_framework,
     load_checks_to_execute_from_groups,
+    parse_checks_from_compliance_framework,
     parse_checks_from_file,
     parse_groups_from_file,
     recover_checks_from_provider,
@@ -8,18 +9,20 @@ from lib.check.check import (
 from lib.logger import logger
 
 
-#  Generate the list of checks to execute
-# test this function
+# Generate the list of checks to execute
+# PENDING Test for this function
 def load_checks_to_execute(
     bulk_checks_metadata: dict,
+    bulk_compliance_frameworks: dict,
     checks_file: str,
     check_list: list,
     service_list: list,
     group_list: list,
     severities: list,
+    compliance_frameworks: list,
     provider: str,
 ) -> set:
-
+    """Generate the list of checks to execute based on the cloud provider and input arguments specified"""
     checks_to_execute = set()
 
     # Handle if there are checks passed using -c/--checks
@@ -63,6 +66,15 @@ def load_checks_to_execute(
             available_groups = parse_groups_from_file(groups_file)
             checks_to_execute = load_checks_to_execute_from_groups(
                 available_groups, group_list, provider
+            )
+        except Exception as e:
+            logger.error(f"{e.__class__.__name__} -- {e}")
+
+    # Handle if there are compliance frameworks passed using --compliance
+    elif compliance_frameworks:
+        try:
+            checks_to_execute = parse_checks_from_compliance_framework(
+                compliance_frameworks, bulk_compliance_frameworks
             )
         except Exception as e:
             logger.error(f"{e.__class__.__name__} -- {e}")

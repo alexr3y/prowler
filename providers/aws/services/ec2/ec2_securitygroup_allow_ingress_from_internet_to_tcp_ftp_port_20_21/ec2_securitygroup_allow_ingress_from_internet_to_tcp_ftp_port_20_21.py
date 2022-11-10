@@ -10,7 +10,7 @@ class ec2_securitygroup_allow_ingress_from_internet_to_tcp_ftp_port_20_21(Check)
         check_ports = [20, 21]
         for security_group in ec2_client.security_groups:
             public = False
-            report = Check_Report(self.metadata)
+            report = Check_Report(self.metadata())
             report.region = security_group.region
             # Loop through every security group's ingress rule and check it
             for ingress_rule in security_group.ingress_rules:

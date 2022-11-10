@@ -14,6 +14,7 @@ from config.config import (
 from lib.banner import print_banner, print_version
 from lib.check.check import (
     bulk_load_checks_metadata,
+    bulk_load_compliance_frameworks,
     exclude_checks_to_run,
     exclude_groups_to_run,
     exclude_services_to_run,
@@ -21,11 +22,13 @@ from lib.check.check import (
     list_groups,
     list_services,
     print_checks,
+    print_compliance_frameworks,
     print_services,
     run_check,
     set_output_options,
 )
 from lib.check.checks_loader import load_checks_to_execute
+from lib.check.compliance import update_compliance_metadata_with_compliance
 from lib.logger import logger, set_logging_config
 from lib.outputs.outputs import close_json, send_to_s3_bucket
 from providers.aws.aws_provider import provider_set_session
@@ -58,6 +61,11 @@ if __name__ == "__main__":
         help="List of severities [informational, low, medium, high, critical]",
         choices=["informational", "low", "medium", "high", "critical"],
     )
+    group.add_argument(
+        "--compliance",
+        nargs="+",
+        help="List of Compliance Frameworks to check against for. The format should be the following: framework_version_provider (e.g.: cis_v1.4_aws or ens_v3_aws)",
+    )
     # Exclude checks options
     parser.add_argument("-e", "--excluded-checks", nargs="+", help="Checks to exclude")
     parser.add_argument("-E", "--excluded-groups", nargs="+", help="Groups to exclude")
@@ -72,6 +80,9 @@ if __name__ == "__main__":
     )
     list_group.add_argument(
         "--list-services", action="store_true", help="List services"
+    )
+    list_group.add_argument(
+        "--list-compliance", action="store_true", help="List compliance frameworks"
     )
 
     parser.add_argument(
@@ -208,6 +219,7 @@ if __name__ == "__main__":
     output_directory = args.output_directory
     output_filename = args.output_filename
     severities = args.severity
+    compliance_framework = args.compliance
     output_modes = args.output_modes
 
     # Set Logger configuration
@@ -243,17 +255,31 @@ if __name__ == "__main__":
     # Load checks metadata
     logger.debug("Loading checks metadata from .metadata.json files")
     bulk_checks_metadata = bulk_load_checks_metadata(provider)
+    # Load compliance frameworks
+    logger.debug("Loading compliance frameworks from .json files")
+    bulk_compliance_frameworks = bulk_load_compliance_frameworks(provider)
+    # Complete checks metadata with the compliance framework specification
+    update_compliance_metadata_with_compliance(
+        bulk_compliance_frameworks, bulk_checks_metadata
+    )
+
+    if args.list_compliance:
+        print_compliance_frameworks(bulk_compliance_frameworks)
+        sys.exit()
 
     # Load checks to execute
     checks_to_execute = load_checks_to_execute(
         bulk_checks_metadata,
+        bulk_compliance_frameworks,
         checks_file,
         checks,
         services,
         groups,
         severities,
+        compliance_framework,
         provider,
     )
+
     # Exclude checks if -e/--excluded-checks
     if excluded_checks:
         checks_to_execute = exclude_checks_to_run(checks_to_execute, excluded_checks)
@@ -321,6 +347,7 @@ if __name__ == "__main__":
         args.security_hub,
         output_filename,
         allowlist_file,
+        bulk_checks_metadata,
     )
 
     # Execute checks
@@ -336,6 +363,9 @@ if __name__ == "__main__":
                 lib = import_check(check_module_path)
                 # Recover functions from check
                 check_to_execute = getattr(lib, check_name)
+                # Sinche every check is an instance of a CheckMetadataModel class
+                # we can use the Pydantic's classmethods.
+                # To load the metadata we use the previous validated metadata
                 c = check_to_execute()
                 # Run check
                 run_check(c, audit_info, audit_output_options)

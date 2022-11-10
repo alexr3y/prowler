@@ -153,7 +153,7 @@ class Test_Outputs:
             "depends_on",
             "related_to",
             "notes",
-            "compliance",
+            # "compliance",
         ]
 
         assert generate_csv_fields() == expected
@@ -176,7 +176,7 @@ class Test_Outputs:
         finding = Check_Report(
             load_check_metadata(
                 f"{path.dirname(path.realpath(__file__))}/fixtures/metadata.json"
-            )
+            ).json()
         )
         finding.resource_details = "Test resource details"
         finding.resource_id = "test-resource"
@@ -220,7 +220,7 @@ class Test_Outputs:
         finding = Check_Report(
             load_check_metadata(
                 f"{path.dirname(path.realpath(__file__))}/fixtures/metadata.json"
-            )
+            ).json()
         )
         finding.resource_details = "Test resource details"
         finding.resource_id = "test-resource"
