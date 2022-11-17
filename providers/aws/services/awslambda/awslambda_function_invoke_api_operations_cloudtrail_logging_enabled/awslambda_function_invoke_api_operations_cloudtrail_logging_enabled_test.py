@@ -1,10 +1,12 @@
+from datetime import datetime
 from unittest import mock
+
+from boto3 import session
 from moto.core import DEFAULT_ACCOUNT_ID
+
+from providers.aws.lib.audit_info.audit_info import AWS_Audit_Info
 from providers.aws.services.awslambda.awslambda_service import Function
 from providers.aws.services.cloudtrail.cloudtrail_service import Trail
-from datetime import datetime
-from providers.aws.lib.audit_info.audit_info import AWS_Audit_Info
-from boto3 import session
 
 AWS_REGION = "us-east-1"
 
@@ -32,7 +34,7 @@ class Test_awslambda_function_invoke_api_operations_cloudtrail_logging_enabled:
         return audit_info
 
     def test_no_functions(self):
-        lambda_client = mock.MagicMock()
+        lambda_client = mock.MagicMock
         lambda_client.functions = {}
         cloudtrail_client = mock.MagicMock
         cloudtrail_client.trails = []
@@ -44,7 +46,7 @@ class Test_awslambda_function_invoke_api_operations_cloudtrail_logging_enabled:
             "providers.aws.lib.audit_info.audit_info.current_audit_info",
             self.set_mocked_audit_info(),
         ), mock.patch(
-            "providers.aws.services.cloudtrail.cloudtrail_service.CloudTrail",
+            "providers.aws.services.cloudtrail.cloudtrail_service.Cloudtrail",
             new=cloudtrail_client,
         ):
             # Test Check
@@ -105,7 +107,7 @@ class Test_awslambda_function_invoke_api_operations_cloudtrail_logging_enabled:
             "providers.aws.services.awslambda.awslambda_service.Lambda",
             new=lambda_client,
         ), mock.patch(
-            "providers.aws.services.cloudtrail.cloudtrail_service.CloudTrail",
+            "providers.aws.services.cloudtrail.cloudtrail_service.Cloudtrail",
             new=cloudtrail_client,
         ):
 
@@ -183,7 +185,7 @@ class Test_awslambda_function_invoke_api_operations_cloudtrail_logging_enabled:
             "providers.aws.services.awslambda.awslambda_service.Lambda",
             new=lambda_client,
         ), mock.patch(
-            "providers.aws.services.cloudtrail.cloudtrail_service.CloudTrail",
+            "providers.aws.services.cloudtrail.cloudtrail_service.Cloudtrail",
             new=cloudtrail_client,
         ):
 
